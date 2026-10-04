@@ -124,3 +124,15 @@ test('Devtools PermissionHandler - sends messages through runtime.sendMessage', 
     params: 'https://example.com',
   });
 });
+
+test('Devtools PermissionHandler - error response is not treated as granted', async () => {
+  const { detector, stubs } = createSinonBrowserMock();
+  stubs.runtime.sendMessage.resolves({ success: false, error: 'boom' });
+
+  const handler = new DevtoolsPermissionHandler(detector);
+  await assert.rejects(handler.checkPermissions('https://example.com'), /boom/);
+  await assert.rejects(
+    handler.requestPermission('https://example.com'),
+    /boom/
+  );
+});

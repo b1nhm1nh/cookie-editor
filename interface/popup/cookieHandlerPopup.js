@@ -55,10 +55,8 @@ export class CookieHandlerPopup extends GenericCookieHandler {
    *     occurred.
    */
   onCookiesChanged = changeInfo => {
-    const domain = changeInfo.cookie.domain.substring(1);
     if (
-      this.currentTab &&
-      this.currentTab.url.indexOf(domain) !== -1 &&
+      this.isCookieForCurrentTab(changeInfo.cookie) &&
       changeInfo.cookie.storeId === (this.currentTab.cookieStoreId || '0')
     ) {
       this.emit('cookiesChanged', changeInfo);

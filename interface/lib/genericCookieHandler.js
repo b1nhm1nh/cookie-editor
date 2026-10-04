@@ -27,6 +27,33 @@ export class GenericCookieHandler extends EventEmitter {
   }
 
   /**
+   * Checks if a cookie belongs to the current tab, based on its domain and
+   * cookie store.
+   * @param {object} cookie
+   * @return {boolean}
+   */
+  isCookieForCurrentTab(cookie) {
+    if (!this.currentTab || !cookie || !cookie.domain) {
+      return false;
+    }
+    if (
+      cookie.storeId &&
+      this.currentTab.cookieStoreId &&
+      cookie.storeId !== this.currentTab.cookieStoreId
+    ) {
+      return false;
+    }
+    let hostname;
+    try {
+      hostname = new URL(this.currentTab.url).hostname.toLowerCase();
+    } catch (e) {
+      return false;
+    }
+    const domain = cookie.domain.toLowerCase().replace(/^\./, '');
+    return hostname === domain || hostname.endsWith('.' + domain);
+  }
+
+  /**
    * Prepares a cookie to be saved. Cleans it up for certain browsers.
    * @param {object} cookie
    * @param {string} url

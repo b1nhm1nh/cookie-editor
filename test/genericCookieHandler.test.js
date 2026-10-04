@@ -149,3 +149,24 @@ test('GenericCookieHandler - removeCookie on Safari queries all cookies and remo
     storeId: '0',
   });
 });
+
+test('GenericCookieHandler - isCookieForCurrentTab matches by hostname', () => {
+  const { detector } = createSinonBrowserMock({ browserName: 'chrome' });
+  const handler = new GenericCookieHandler(detector);
+  handler.currentTab = {
+    url: 'https://sub.example.com/page?r=other.com',
+    cookieStoreId: '0',
+  };
+
+  assert.equal(handler.isCookieForCurrentTab({ domain: '.example.com' }), true);
+  assert.equal(
+    handler.isCookieForCurrentTab({ domain: 'sub.example.com' }),
+    true
+  );
+  assert.equal(handler.isCookieForCurrentTab({ domain: '.other.com' }), false);
+  assert.equal(handler.isCookieForCurrentTab({ domain: 'ample.com' }), false);
+  assert.equal(
+    handler.isCookieForCurrentTab({ domain: '.example.com', storeId: '1' }),
+    false
+  );
+});

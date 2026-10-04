@@ -36,7 +36,7 @@ export class NetscapeFormat {
         hostOnly: elements[1].toLowerCase() === 'false',
         path: elements[2],
         secure: elements[3].toLowerCase() === 'true',
-        expiration: elements[4],
+        expirationDate: Number(elements[4]) || undefined,
         name: elements[5],
         value: elements[6],
         httpOnly: isHttpOnly,

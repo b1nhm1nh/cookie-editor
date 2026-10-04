@@ -283,7 +283,11 @@ export class OptionsHandler extends EventEmitter {
    * Notifies the background script that the options changed.
    */
   notifyBackgroundOfChanges() {
-    this.sendMessage('optionsChanged', { from: this.guid });
+    Promise.resolve(
+      this.sendMessage('optionsChanged', { from: this.guid })
+    ).catch(error => {
+      console.warn('Failed to notify background of options change', error);
+    });
   }
 
   /**

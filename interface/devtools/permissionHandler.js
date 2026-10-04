@@ -34,7 +34,11 @@ export class PermissionHandler {
    * @return {Promise}
    */
   async checkPermissions(url) {
-    return await this.sendMessage('permissionsContains', url);
+    const response = await this.sendMessage('permissionsContains', url);
+    if (response && response.success === false) {
+      throw new Error(response.error || 'Failed to check permissions');
+    }
+    return response === true;
   }
 
   /**
@@ -43,7 +47,11 @@ export class PermissionHandler {
    * @return {Promise}
    */
   async requestPermission(url) {
-    return await this.sendMessage('permissionsRequest', url);
+    const response = await this.sendMessage('permissionsRequest', url);
+    if (response && response.success === false) {
+      throw new Error(response.error || 'Failed to request permission');
+    }
+    return response === true;
   }
 
   /**

@@ -23,7 +23,7 @@ export class JsonFormat {
       if (!Object.prototype.hasOwnProperty.call(cookies, cookieId)) {
         continue;
       }
-      const exportedCookie = cookies[cookieId].cookie;
+      const exportedCookie = { ...cookies[cookieId].cookie };
       exportedCookie.storeId = null;
       if (exportedCookie.sameSite === 'unspecified') {
         exportedCookie.sameSite = null;

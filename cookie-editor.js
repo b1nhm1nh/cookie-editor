@@ -53,12 +53,15 @@ import { PermissionHandler } from './interface/lib/permissionHandler.js';
    * Devtools require special handling because not all APIs are available in
    * there, such as tab and permissions.
    * @param {object} request contains the message.
-   * @param {MessageSender} sender references the sender of the message, not
-   *    used.
+   * @param {MessageSender} sender references the sender of the message. Only
+   *    messages from this extension are accepted.
    * @param {function} sendResponse callback to respond to the sender.
    * @return {boolean} sometimes
    */
   function handleMessage(request, sender, sendResponse) {
+    if (sender.id !== browserDetector.getApi().runtime.id) {
+      return false;
+    }
     console.log('message received: ' + (request.type || 'unknown'));
     switch (request.type) {
       case 'getTabs': {
@@ -75,16 +78,23 @@ import { PermissionHandler } from './interface/lib/permissionHandler.js';
         return true;
       }
       case 'getCurrentTab': {
-        browserDetector
-          .getApi()
-          .tabs.query({ active: true, currentWindow: true })
-          .then(sendResponse, error => {
-            console.error('Failed to get current tab', error);
-            sendResponse({
-              success: false,
-              error: error?.message || String(error),
-            });
+        // Devtools pass the inspected tab id so we don't pick up whatever tab
+        // happens to be active.
+        const tabPromise = request.params?.tabId
+          ? browserDetector
+              .getApi()
+              .tabs.get(request.params.tabId)
+              .then(tab => [tab])
+          : browserDetector
+              .getApi()
+              .tabs.query({ active: true, currentWindow: true });
+        tabPromise.then(sendResponse, error => {
+          console.error('Failed to get current tab', error);
+          sendResponse({
+            success: false,
+            error: error?.message || String(error),
           });
+        });
         return true;
       }
       case 'getAllCookies': {
@@ -129,6 +139,9 @@ import { PermissionHandler } from './interface/lib/permissionHandler.js';
           name: request.params.name,
           url: request.params.url,
         };
+        if (request.params.storeId) {
+          removeParams.storeId = request.params.storeId;
+        }
         browserDetector
           .getApi()
           .cookies.remove(removeParams)
@@ -169,7 +182,8 @@ import { PermissionHandler } from './interface/lib/permissionHandler.js';
         sendMessageToAllTabs('optionsChanged', {
           from: request.params.from,
         });
-        return true;
+        sendResponse({ success: true });
+        return false;
       }
     }
   }

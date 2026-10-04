@@ -113,8 +113,7 @@ export class CookieHandlerDevtools extends GenericCookieHandler {
    *     occurred.
    */
   onCookiesChanged = changeInfo => {
-    const domain = changeInfo.cookie.domain.substring(1);
-    if (this.currentTab.url.indexOf(domain) !== -1) {
+    if (this.isCookieForCurrentTab(changeInfo.cookie)) {
       this.emit('cookiesChanged', changeInfo);
     }
   };
@@ -136,12 +135,15 @@ export class CookieHandlerDevtools extends GenericCookieHandler {
    */
   updateCurrentTab = async () => {
     try {
-      const tabInfo = await this.sendMessage('getCurrentTab', null);
+      const tabInfo = await this.sendMessage('getCurrentTab', {
+        tabId: this.browserDetector.getApi().devtools.inspectedWindow.tabId,
+      });
       if (!tabInfo || !tabInfo[0]) {
         return;
       }
       const newTab =
         tabInfo[0].id !== this.currentTabId ||
+        !this.currentTab ||
         tabInfo[0].url !== this.currentTab.url;
       this.currentTabId = tabInfo[0].id;
       this.currentTab = tabInfo[0];

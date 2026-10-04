@@ -213,11 +213,17 @@ import { CookieHandlerPopup } from './cookieHandlerPopup.js';
 
       // Should probably put in a function to prevent duplication
       try {
-        if (oldName !== name || oldHostOnly !== hostOnly) {
+        if (oldName !== name) {
+          // Save first so the cookie isn't lost if the new one is rejected.
+          await cookieHandler.saveCookie(cookie, getCurrentTabUrl());
           await removeCookie(oldName, getCurrentTabUrl());
+        } else {
+          // Same name: removing after saving could delete the new cookie.
+          if (oldHostOnly !== hostOnly) {
+            await removeCookie(oldName, getCurrentTabUrl());
+          }
+          await cookieHandler.saveCookie(cookie, getCurrentTabUrl());
         }
-
-        await cookieHandler.saveCookie(cookie, getCurrentTabUrl());
         if (browserDetector.isSafari()) {
           onCookiesChanged();
         }
@@ -401,11 +407,14 @@ import { CookieHandlerPopup } from './cookieHandlerPopup.js';
         } catch (error) {
           console.warn(error);
           try {
-            cookies = HeaderstringFormat.parse(json);
+            cookies = NetscapeFormat.parse(json);
+            if (cookies.length === 0) {
+              throw new Error('No cookies found.');
+            }
           } catch (error) {
             console.warn(error);
             try {
-              cookies = NetscapeFormat.parse(json);
+              cookies = HeaderstringFormat.parse(json);
             } catch (error) {
               console.warn("Couldn't parse Data", error);
               sendNotification('The input is not in a valid format.');
@@ -574,17 +583,22 @@ import { CookieHandlerPopup } from './cookieHandlerPopup.js';
       showNoCookies();
       return;
     }
-    const hasPermissions = await permissionHandler.checkPermissions(
-      cookieHandler.currentTab.url
-    );
-    if (!hasPermissions) {
-      showNoPermission();
+    let cookies;
+    try {
+      const hasPermissions = await permissionHandler.checkPermissions(
+        cookieHandler.currentTab.url
+      );
+      if (!hasPermissions) {
+        showNoPermission();
+        return;
+      }
+
+      cookies = (await cookieHandler.getAllCookies()).sort(sortCookiesByName);
+    } catch (error) {
+      console.error('Failed to load cookies', error);
+      sendNotification(error.message || String(error));
       return;
     }
-
-    const cookies = (await cookieHandler.getAllCookies()).sort(
-      sortCookiesByName
-    );
 
     loadedCookies = {};
 

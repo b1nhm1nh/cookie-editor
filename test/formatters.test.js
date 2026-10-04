@@ -95,5 +95,15 @@ test('NetscapeFormat - format and parse Netscape cookies', () => {
   assert.equal(parsed[0].domain, '.example.com');
   assert.equal(parsed[0].path, '/');
   assert.equal(parsed[0].secure, true);
-  assert.equal(parsed[0].expiration, '1900000000');
+  assert.equal(parsed[0].expirationDate, 1900000000);
+});
+
+test('NetscapeFormat - parses values containing "=" as Netscape', () => {
+  const input =
+    '# Netscape HTTP Cookie File\n' +
+    '.example.com\tTRUE\t/\tTRUE\t1900000000\tdata\tYWJj==';
+  const parsed = NetscapeFormat.parse(input);
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].value, 'YWJj==');
+  assert.equal(parsed[0].expirationDate, 1900000000);
 });

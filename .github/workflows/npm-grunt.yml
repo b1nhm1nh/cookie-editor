@@ -42,9 +42,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Test
         run: |
           npm test
-          grunt exec:lint
+          npx grunt exec:lint
